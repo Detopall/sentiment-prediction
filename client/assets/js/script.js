@@ -22,11 +22,11 @@ async function makeRequest(text) {
 		headers: {
 			"Content-Type": "application/json",
 		},
-		body: JSON.stringify({text}),
+		body: JSON.stringify({ text }),
 	});
 
 	const jsonResponse = await response.json();
-	displayResults(jsonResponse["sentiment"]);
+	displayResults(jsonResponse["probabilities"]);
 }
 
 
@@ -35,15 +35,27 @@ function displayResults(response) {
 	const text = document.getElementById("text");
 
 	result.innerHTML = "";
-
 	const emojis = {
-		positive: "&#x1F495",
-		negative: "&#x1F47A",
-		neutral: "&#x1F610",
+		positive: "&#x1F495;",
+		negative: "&#x1F47A;",
+		neutral: "&#x1F610;"
 	};
 
-	const emoji = emojis[response];
-	result.innerHTML = `<p>"${text.value}" => ${emoji} ${response}</p>`;
+	text.value = text.value.trim();
+
+	let progressBarHTML = "";
+	response.forEach(sentiment => {
+		const { percentage, sentiment: sentimentLabel } = sentiment;
+		const emoji = emojis[sentimentLabel];
+
+		const progressHTML = `
+							<div class="progress-bar">
+								<div class="progress ${sentimentLabel}" style="width: ${percentage}%;"></div>
+								<span>${emoji} ${sentimentLabel}: ${percentage}%</span>
+                            </div>`;
+		progressBarHTML += progressHTML;
+	});
 	
+	result.insertAdjacentHTML("beforeend", progressBarHTML + `<span>${text.value}</span>`);
 	text.value = "";
 }

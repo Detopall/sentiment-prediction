@@ -26,11 +26,29 @@ def predict():
 	new_text_bag_of_words = count_vect.transform([preprocessed_text])
 	new_text_tf = tfidf_transformer.transform(new_text_bag_of_words)
 
-	predicted_sentiment = model.predict(new_text_tf)
-	predicted_sentiment_label = label_encoder.inverse_transform(predicted_sentiment)
+	return jsonify({"probabilities": predict_probability(model, new_text_tf, label_encoder)})
 
-	return jsonify({"sentiment": str(predicted_sentiment_label[0])})
 
+def predict_probability(model, new_text_tf, label_encoder):
+	probabilities = model.predict_proba(new_text_tf)
+	sentiment_classes = label_encoder.classes_
+	sentiment_probabilities = zip(sentiment_classes, probabilities[0])
+
+	total_probability = np.sum(probabilities)
+	percentage_per_sentiment = {}
+
+	for sentiment, probability in sentiment_probabilities:
+		percentage = ((probability / total_probability) * 100).round(2)
+		percentage_per_sentiment[sentiment] = percentage
+
+	sentiment_probabilities = []
+	for sentiment, percentage in percentage_per_sentiment.items():
+		sentiment_probabilities.append({
+			"sentiment": sentiment,
+			"percentage": percentage
+		})
+    
+	return sentiment_probabilities
 
 def text_preprocessing(text, language, minWordSize):
     text = re.sub('[^a-zA-Z]', ' ', text)
